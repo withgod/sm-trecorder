@@ -13,10 +13,12 @@ use XML::RSS;
 my $param_team_name = param('team_name');
 my $param_season_tag = param('season_tag');
 my $param_map_name = param('map_name');
-my $param_mode = param('mode') || "json";
-my $param_type = param('type') || "summary";
+my $param_mode = param('mode') || "json"; # json, rss
 my $param_hasKey = param('hasKey') || "true";
+my $param_nl2br = param('nl2br') || "false"; #rss only
 my $param_callback = param('callback');
+
+my $param_type = param('type') || "summary"; # not work
 
 my $dbh = DBI->connect('DBI:mysql:sourcemod;host=localhost;port=3306', 'sourcemod', 'sourcemodpassword') or die "can't connect db";
 
@@ -38,6 +40,12 @@ sub gen_result {
 		$_result = $sth->fetchall_arrayref;
 	}
 	return $_result;
+}
+
+sub nl2br {
+	my $tmp = shift;
+	$tmp =~ s/[\r\n]+/<br>/g;
+	return $tmp;
 }
 
 my $result;
@@ -84,10 +92,15 @@ if ($param_mode eq 'rss') {
 	);
 	for my $item (reverse @{$result}) {
 		my $date = "$1T$2+09:00" if ($item->{'result_date'} =~ /^([\d\-]+) ([\d:]+)/);
+		my $description = $item->{'team_1_score'} .' - '. $item->{'team_2_score'} . "\n" . $item->{'map_name'} . "\n" . $item->{'season_tag'};
+		if ($param_nl2br eq 'true') {
+			$description = nl2br($description);
+		}
+		
 		$rss->add_item(
 			title => $item->{'team_1_name'} .' - '. $item->{'team_2_name'},
 			link  => "http://withgod.dyndns.org/trecorder/",
-			description => $item->{'team_1_score'} .' - '. $item->{'team_2_score'} . "\n" . $item->{'map_name'} . "\n" . $item->{'season_tag'},
+			description => $description,
 			dc => {
 				date => $date
 			}
