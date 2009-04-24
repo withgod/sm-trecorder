@@ -1,0 +1,95 @@
+body {
+	background-color: #ffffff;
+	color: #4b4b4b;
+	font-family: verdana, arial, sans-serif;
+	font-size: 13px;
+	margin: 10px 20px;
+}
+
+#content {
+	margin: 5px;
+}
+
+#copy {
+	text-align: right;
+	font-weight: bold;
+	border: #4b4b4b 1px solid;
+	padding: 3px;
+	padding-right: 10px;
+}
+
+#content_child {
+	margin-top: 5px;
+	margin-left: 20px;
+}
+
+h2 {
+	font-weight: bold;
+	padding-left: 5px;
+	border-bottom: #4b4b4b 2px solid;
+	border-left: #4b4b4b 10px solid;
+}
+
+dl {
+	margin-left: 5px;
+}
+
+dt {
+	clear: both;
+	font-weight: bold;
+	padding-left: 5px;
+	border-left: #4b4b4b 5px solid
+}
+
+dd {
+	float: left;
+	margin-left: 5px;
+	margin-bottom: 5px;
+	margin-top: 2px;
+}
+
+pre {
+	margin: 5px;
+	background-color: #c0c0c0;
+	border: #4b4b4b 1px dotted
+
+}
+code {
+	font-family: 'Courier New';
+	font-size: 90%;
+}
+
+/*
+table {
+	width: 530px;
+	border: 1px #E3E3E3 solid;
+	border-collapse: collapse;
+	border-spacing: 0;
+}
+
+th {
+	padding: 5px;
+	border: #E3E3E3 solid;
+	border-width: 0 0 1px 1px;
+	background: #F5F5F5;
+	font-weight: bold;
+	line-height: 120%;
+	text-align: center;
+	white-space: nowrap;
+}
+td {
+	padding: 5px;
+	border: 1px #E3E3E3 solid;
+	border-width: 0 0 1px 1px;
+	text-align: center;
+	white-space: nowrap;
+}
+*/
+table.tablesorter tbody tr.odd td {
+	background-color:#F0F0F6;
+}
+
+dl.thanks dd {
+	float: none;
+}
+

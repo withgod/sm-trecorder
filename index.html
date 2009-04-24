@@ -1,0 +1,187 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<HTML lang="ja">
+	<HEAD>
+		<Title>Tournament Result Recorder Disp</title>
+		<LINK rel="stylesheet" type="text/css" title="main" href="./motd.css">
+		<LINK rel="stylesheet" type="text/css" href="./jquery/jquery.tablesorter.css">
+		<script type="text/javascript" src="./jquery/jquery-1.3.2.min.js"></script>
+		<script type="text/javascript" src="./jquery/jquery.tablesorter.min.js"></script>
+		<script type="text/javascript" src="./jquery/jquery.tablesorter.pager.js"></script>
+		<script type="text/javascript" src="./jquery/jquery.query-2.1.2.js"></script>
+		<!--
+		<script type="text/javascript" src="./mochikit/MochiKit.js"></script>
+		<script type="text/javascript" src="./plotkit/PlotKit.js"></script>
+		<script type="text/javascript" src="./plotkit/Base.js"></script>
+		<script type="text/javascript" src="./plotkit/Layout.js"></script>
+		<script type="text/javascript" src="./plotkit/Canvas.js"></script>
+		<script type="text/javascript" src="./plotkit/SweetCanvas.js"></script>
+		-->
+		<script type="text/javascript">
+			/*
+			var options = {
+				"xTicks": [
+					{v:0, label:"num0"},
+					{v:1, label:"num1"},
+					{v:2, label:"num2"},
+					{v:3, label:"num3"},
+					{v:4, label:"num4"}
+				],
+				"drawYAxis": false
+			};
+			function drawGraph() {
+				var layout = new PlotKit.Layout("pie", options);
+				layout.addDataset("sqrt", [[0, 0], [1, 20], [2, 35], [3, 40], [4, 15]]);
+				layout.evaluate();
+				var canvas = MochiKit.DOM.getElement("graph");
+				var plotter = new PlotKit.SweetCanvasRenderer(canvas, layout, {});
+				plotter.render();
+			}
+			MochiKit.DOM.addLoadEvent(drawGraph);
+			*/
+			$(function(){
+				//$("#stats_maps_content").hide();
+				$("#search_form").submit(function(){
+					doSearch();
+					return false;
+				});
+				$("#stats_maps").click(function(){
+					return false;
+				});
+				initField();
+				doSearch();
+				function setFormLink() {
+					var form_link = "?";
+					form_link += "team_name=" + $("#team_name").val();
+					form_link += "&map_name=" + $("#map_name").val();
+					form_link += "&season_tag=" + $("#season_tag").val();
+					$("#form_link").attr("href", form_link);
+				}
+				function initField() {
+					var team_name = $.query.get("team_name");
+					var map_name = $.query.get("map_name");
+					var season_tag = $.query.get("season_tag");
+					$("#team_name").val(team_name);
+					$("#map_name").val(map_name);
+					$("#season_tag").val(season_tag);
+				}
+				function doSearch() {
+					$.ajax({
+						url : "./handle.pl",
+						dataType: "jsonp",
+						data : {
+							//callback   : "callback",
+							team_name  : $("#team_name").val(),
+							map_name   : $("#map_name").val(),
+							season_tag : $("#season_tag").val()
+						},
+						success: function(json) {
+						$("#results").children("tbody").children("tr").remove();
+						$("#results").trigger("update");
+						$.each(json, function(i, elem) {
+							var tr = $("<tr>");
+							tr.append("<td>" + elem.id+ "</td>");
+							tr.append("<td>" + elem.result_date + "</td>");
+							tr.append("<td>" + elem.team_1_name + "</td>");
+							tr.append("<td>" + elem.team_2_name + "</td>");
+							tr.append("<td>" + elem.team_1_score + " - " + elem.team_2_score+ "</td>");
+							tr.append("<td>" + elem.season_tag + "</td>");
+							tr.append("<td>" + elem.map_name + "</td>");
+							$("#results").append(tr);
+						});
+						$("#results").trigger("update");
+						setFormLink();
+						$("#results").tablesorter({
+							//widthFixed: true,
+							sortList: [[1,1]],
+							widgets: ['zebra']
+							}).tablesorterPager({container: $("#pager"), positionFixed: false});
+						},
+						error : function() {
+							alert("callback error");
+						}
+					});
+				}
+			});
+		</script>
+	</HEAD>
+	<BODY bgcolor="#ffffff" text="#4b4b4b" link="#3399ff" alink="#0099cc" vlink="#006666">
+		<H1>Tournament Result Recorder</H1>
+		<h2 style="margin-bottom: 0px">search form</h2>
+		<form id="search_form">
+			<dl style="float:left">
+				<dt>team name
+				<dd><input type="text" size="25" id="team_name" value="">
+			</dl>
+			<dl style="float:left;">
+				<dt>map name
+				<dd><input type="text" size="25" id="map_name" value="">
+			</dl>
+			<dl style="float:left;">
+				<dt>tag
+				<dd><input type="text" size="25" id="season_tag" value="">
+				<dd><input type="submit" value="search">
+				<a href="" id="form_link">link</a>
+			</dl>
+			<p style="clear:both"/>
+		</form>
+		<div id="pager">
+			<form>
+				<img src="./jquery/first.png" class="first" alt="first"/>
+				<img src="./jquery/prev.png" class="prev" alt="prev"/>
+				<input type="text" class="pagedisplay"/>
+				<img src="./jquery/next.png" class="next" alt="next"/>
+				<img src="./jquery/last.png" class="last" alt="last"/>
+				<select class="pagesize">
+					<option selected="selected"  value="10">10</option>
+					<option value="20">20</option>
+					<option value="30">30</option>
+					<option value="40">40</option>
+					<option value="50">50</option>
+					<option value="100">100</option>
+					<option value="200">200</option>
+				</select>
+			</form>
+		</div>
+		<table id="results"  cellspacing="1" class="tablesorter" style="margin-top: 0px">
+			<thead>
+				<tr>
+					<th>#</th>
+					<th>date</th>
+					<th>red</th>
+					<th>blue</th>
+					<th>score</th>
+					<th>tag</th>
+					<th>map name</th>
+				</tr>
+			</thead>
+			<tbody>
+			</tbody>
+		</table>
+		<!--
+		<h2>results summary</h2>
+		<h3 id="stats_maps">maps</h3>
+		<div id="stats_maps_content" style="">
+		</div>
+		-->
+		<p style="clear:both" />
+		<div id="thanks">
+			<h2>special thanks.</h2>
+			<dl class="thanks">
+				<dt>tf2 users
+				<dd>Coral Bu-n
+				<dd>Galaxy viNez
+				<dd><a href="http://clanhigh.blog15.fc2.com/">Clan =High=</a>
+				<dt>official and library
+				<dd><a href="http://www.sourcemod.net/">sourcemod team</a>
+				<dd><a href="http://jquery.com/">jquery</a>
+				<dd><a href="http://plugins.jquery.com/project/query-object">jquery query</a>
+				<dd><a href="http://tablesorter.com/docs/">jquery tablesorter</a>
+				<dd><a href="http://www.vim.org//">vi Improved</a>
+				</dd>
+			</div>
+		<p style="clear:both" />
+		<div id="copy">
+			- Copyright &copy; 2009 withgod All Rights Reserved. -
+		</div>
+	</BODY>
+</HTML>
