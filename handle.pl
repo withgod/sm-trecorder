@@ -10,13 +10,16 @@ use POSIX;
 use JSON;
 use XML::RSS;
 
-my $param_team_name = param('team_name');
+my $param_team_name  = param('team_name');
 my $param_season_tag = param('season_tag');
-my $param_map_name = param('map_name');
-my $param_mode = param('mode') || "json"; # json, rss
-my $param_hasKey = param('hasKey') || "true";
-my $param_nl2br = param('nl2br') || "false"; #rss only
-my $param_callback = param('callback');
+my $param_map_name   = param('map_name');
+my $param_mode       = param('mode') || "json"; # json, rss
+my $param_hasKey     = param('hasKey') || "true";
+my $param_nl2br      = param('nl2br') || "false"; #rss only
+my $param_callback   = param('callback');
+my $param_limit      = param('limit') || 1000;
+my $param_offset     = param('offset') || 0;
+my $param_desc       = param('desc') || "false";
 
 my $param_type = param('type') || "summary"; # not work
 
@@ -60,13 +63,16 @@ if ($param_type eq 'maplist') {
 } else {
 	my $sql = "select * from results where enable_flag = true and ".
 			  "(team_1_name like ? or team_2_name like ?) and map_name " .
-			  "like ? and season_tag like ? order by id";
+			  "like ? and season_tag like ? order by id asc limit ? offset ?";
+	$sql =~ s/ asc / desc / if ($param_desc ne 'false');
 
 	my $sth = $dbh->prepare($sql);
 	$sth->bind_param(1, $param_team_name ? $param_team_name : '%');
 	$sth->bind_param(2, $param_team_name ? $param_team_name : '%');
 	$sth->bind_param(3, $param_map_name ? $param_map_name : '%');
 	$sth->bind_param(4, $param_season_tag ? "%$param_season_tag%" : '%');
+	$sth->bind_param(5, $param_limit);
+	$sth->bind_param(6, $param_offset);
 
 	my $ret = $sth->execute;
 
