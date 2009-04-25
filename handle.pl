@@ -104,7 +104,7 @@ if ($param_mode eq 'rss') {
 		}
 		
 		$rss->add_item(
-			title => $item->{'team_1_name'} .' - '. $item->{'team_2_name'},
+			title => $item->{'team_1_name'} . '(' . $item->{'team_1_score'} .') - '. $item->{'team_2_name'}  . '(' . $item->{'team_2_score'} .')',
 			link  => "http://withgod.dyndns.org/trecorder/",
 			description => $description,
 			dc => {
