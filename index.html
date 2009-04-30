@@ -57,9 +57,9 @@
 					$("#form_link").attr("href", form_link);
 				}
 				function initField() {
-					var team_name = $.query.get("team_name");
-					var map_name = $.query.get("map_name");
-					var season_tag = $.query.get("season_tag");
+					var team_name = $.query.get("team_name") === true ? '' : $.query.get("team_name");
+					var map_name = $.query.get("map_name") === true ? '' : $.query.get("map_name");
+					var season_tag = $.query.get("season_tag") === true ? '' : $.query.get("season_tag");
 					$("#team_name").val(team_name);
 					$("#map_name").val(map_name);
 					$("#season_tag").val(season_tag);
