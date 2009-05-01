@@ -10,23 +10,36 @@ use POSIX;
 use JSON;
 use XML::RSS;
 
-my $param_team_name  = param('team_name');
-my $param_season_tag = param('season_tag');
-my $param_map_name   = param('map_name');
+my $DEBUG = param('_debug');
+print "Content-type: text/plain\r\n\r\n" if ($DEBUG);
+
+my $param_team_name          = param_split('team_name');
+#my $param_team_name_exclude  = param_split('team_name_ex');
+my $param_season_tag         = param_split('season_tag');
+#my $param_season_tag_exclude = param_split('season_tag_ex');
+my $param_map_name           = param_split('map_name');
+#my $param_map_name_exclude   = param_split('map_name_ex');
+
 my $param_mode       = param('mode') || "json"; # json, rss
 my $param_hasKey     = param('hasKey') || "true";
 my $param_nl2br      = param('nl2br') || "false"; #rss only
-my $param_callback   = param('callback');
 my $param_limit      = param('limit') || 1000;
 my $param_offset     = param('offset') || 0;
 my $param_desc       = param('desc') || "false";
+my $param_callback   = param('callback');
 
 my $param_type = param('type') || "summary"; # not work
 
-my $dbh = DBI->connect('DBI:mysql:sourcemod;host=localhost;port=3306', 'sourcemod', 'sourcemodpassword') or die "can't connect db";
 
-#print "Content-type: text/plain\r\n\r\n";
-#print Dumper $param_hasKey;
+my $dbh = DBI->connect('DBI:mysql:sourcemod;host=localhost;port=3306', 'sourcemod', 'sourcemodpassword') or die "can't connect db";
+#$dbh->{TraceLevel} = "3|SQL";
+
+sub param_split {
+	my $val = param($_[0]) ? param($_[0]) : "";
+	my @tmp = split /,/, $val;
+	return \@tmp;
+}
+
 sub gen_result {
 	my $sth = shift;
 	my $_result = [];
@@ -34,6 +47,8 @@ sub gen_result {
 		my $sort_key = 'id';
 		if ($param_type eq "maplist") {
 			$sort_key = "map_name";
+		} elsif ($param_type eq 'teamnames') {
+			$sort_key = "team_names";
 		}
 		my $retref = $sth->fetchall_hashref($sort_key);
 		for (sort { $a <=> $b } keys %{$retref}) {
@@ -43,6 +58,78 @@ sub gen_result {
 		$_result = $sth->fetchall_arrayref;
 	}
 	return $_result;
+}
+
+sub sql_and {
+}
+
+sub sql_build {
+	my $sql = "select * from results where enable_flag = true ";
+	print Dumper $sql if $DEBUG;
+	if ($param_team_name) {
+		my $tmp;
+		$tmp .= sql_or('team_1_name', 'like', $param_team_name);
+		$tmp .= sql_or('team_2_name', 'like', $param_team_name);
+		$tmp =~ s#\) and \(# or #;
+		$sql .= $tmp;
+	}
+#	if ($param_team_name_exclude) {
+#		my $tmp;
+#		$tmp .= sql_or('team_1_name', 'not like', $param_team_name_exclude);
+#		$tmp .= sql_or('team_2_name', 'not like', $param_team_name_exclude);
+#		$tmp =~ s#\) and \(# or #;
+#		$sql .= $tmp;
+#	}
+	print Dumper $sql if $DEBUG;
+	$sql .= sql_or('map_name', 'like', $param_map_name);
+#	$sql .= sql_or('map_name', 'not like', $param_map_name_exclude);
+	$sql .= sql_or('season_tag', 'like', $param_season_tag);
+#	$sql .= sql_or('season_tag', 'not like', $param_season_tag_exclude);
+	$sql .= " order by id asc limit ? offset ?";
+	$sql =~ s/order by asc /order by desc / if ($param_desc ne 'false');
+	print Dumper $sql if $DEBUG;
+
+	return $sql;
+}
+
+sub sql_or {
+	my ($id, $operant, $params) = @_;
+	my $ret = "";
+	if ($#{$params} >= 0) {
+		$ret .= ' and (';
+
+		for my $val (@{$params}) {
+			$ret .= sprintf "%s %s ? or ", $id, $operant;
+		}
+		$ret =~ s/ or $//;
+
+		$ret .= ')';
+	}
+
+	return $ret;
+}
+sub sql_bind {
+	my @binds;
+	@binds = (@binds, @{$param_team_name});
+	@binds = (@binds, @{$param_team_name});
+	#@binds = (@binds, @{$param_team_name_exclude});
+	#@binds = (@binds, @{$param_team_name_exclude});
+	@binds = (@binds, @{$param_map_name});
+	#@binds = (@binds, @{$param_map_name_exclude});
+	@binds = (@binds, @{$param_season_tag});
+	#@binds = (@binds, @{$param_season_tag_exclude});
+	@binds = sql_query_fix(@binds);
+	@binds = (@binds, $param_limit, $param_offset);
+	print Dumper @binds if $DEBUG;
+
+	return \@binds;
+}
+sub sql_query_fix {
+	my @ret;
+	for (@_) {
+		push @ret, "%$_%";
+	}
+	return @ret;
 }
 
 sub nl2br {
@@ -57,24 +144,17 @@ if ($param_type eq 'maplist') {
 	my $ret = $sth->execute;
 	$result = gen_result($sth);
 } elsif ($param_type eq 'teamnames') {
-	my $sth = $dbh->prepare("select distinct map_name from results order by map_name");
+	my $sth = $dbh->prepare("select team_1_name as team_names from (select distinct team_1_name from results union select distinct team_2_name as team_1_name from results) fuga");
 	my $ret = $sth->execute;
 	$result = gen_result($sth);
 } else {
-	my $sql = "select * from results where enable_flag = true and ".
-			  "(team_1_name like ? or team_2_name like ?) and map_name " .
-			  "like ? and season_tag like ? order by id asc limit ? offset ?";
-	$sql =~ s/ asc / desc / if ($param_desc ne 'false');
-
+	my $sql = sql_build();
 	my $sth = $dbh->prepare($sql);
-	$sth->bind_param(1, $param_team_name ? $param_team_name : '%');
-	$sth->bind_param(2, $param_team_name ? $param_team_name : '%');
-	$sth->bind_param(3, $param_map_name ? $param_map_name : '%');
-	$sth->bind_param(4, $param_season_tag ? "%$param_season_tag%" : '%');
-	$sth->bind_param(5, $param_limit);
-	$sth->bind_param(6, $param_offset);
+	my $binds = sql_bind();
+	print Dumper $binds if $DEBUG;
 
-	my $ret = $sth->execute;
+	my $ret = $sth->execute(@{$binds});
+	print Dumper $ret if $DEBUG;
 
 	$result = gen_result($sth);
 }
