@@ -8,6 +8,7 @@ use CGI qw(param);
 use Data::Dumper;
 use POSIX;
 use JSON;
+use XML::Simple;
 use XML::RSS;
 
 my $DEBUG = param('_debug');
@@ -86,7 +87,7 @@ sub sql_build {
 	$sql .= sql_or('season_tag', 'like', $param_season_tag);
 #	$sql .= sql_or('season_tag', 'not like', $param_season_tag_exclude);
 	$sql .= " order by id asc limit ? offset ?";
-	$sql =~ s/order by asc /order by desc / if ($param_desc ne 'false');
+	$sql =~ s/order by id asc /order by id desc / if ($param_desc eq 'true');
 	print Dumper $sql if $DEBUG;
 
 	return $sql;
@@ -194,13 +195,17 @@ if ($param_mode eq 'rss') {
 	}
 	print $rss->as_string;
 } else {
-	print "Content-type: text/javascript+json; charset=UTF-8\r\n\r\n";
-
-	my $response = to_json($result);
-	if ($param_callback && $param_callback =~ /^[\w\d\-\_]+$/) {
-		print "$param_callback($response);";
-	} else {
-		print $response;
+	if ($param_mode eq 'json') {
+		print "Content-type: text/javascript+json; charset=UTF-8\r\n\r\n";
+		my $response = to_json($result);
+		if ($param_callback && $param_callback =~ /^[\w\d\-\_]+$/) {
+			print "$param_callback($response);";
+		} else {
+			print $response;
+		}
+	} elsif ($param_mode eq 'xml') {
+		print "Content-type: text/xml; charset=UTF-8\r\n\r\n";
+		print XMLout($result,  RootName => 'recentData');
 	}
 }
 
