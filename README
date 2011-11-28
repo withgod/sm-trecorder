@@ -1,0 +1,14 @@
+sourcemod plugin. tournament result recorder.
+
+* trecorder.sp
+** sourcemod plugin
+* others
+** web interface
+
+sample
+
+http://withgod.dyndns.org/trecorder/
+
+LICENSE
+	WTFPL
+
